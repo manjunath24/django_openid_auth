@@ -152,7 +152,7 @@ class OpenIDBackend:
         if getattr(settings, 'OPENID_STRICT_USERNAMES', False):
             if nickname is None or nickname == '':
                 raise MissingUsernameViolation()
-                
+
         # If we don't have a nickname, and we're not being strict, use a default
         nickname = nickname or 'openiduser'
 
@@ -170,12 +170,12 @@ class OpenIDBackend:
                 user__username__startswith=nickname)
             # No exception means we have an existing user for this identity
             # that starts with this nickname.
-            
+
             # If they are an exact match, the user already exists and hasn't
             # changed their username, so continue to use it
             if nickname == user_openid.user.username:
                 return nickname
-            
+
             # It is possible we've had to assign them to nickname+i already.
             oid_username = user_openid.user.username
             if len(oid_username) > len(nickname):
@@ -227,8 +227,10 @@ class OpenIDBackend:
         email = details['email'] or ''
 
         username = self._get_available_username(details['nickname'], openid_response.identity_url)
-
-        user = User.objects.create_user(username, email, password=None)
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = User.objects.create_user(username, email, password=None)
         self.associate_openid(user, openid_response)
         self.update_user_details(user, details, openid_response)
 
